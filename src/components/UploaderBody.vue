@@ -71,7 +71,7 @@
           slot="after"
           name="cloud_upload"
           class="q-if-control"
-          :disabled="length === 0"
+          :disabled="length === 0 || allFilesUploaded"
           @click="upload"
         ></q-icon>
 
@@ -207,7 +207,9 @@ export default {
       uploading: false,
       uploadedSize: 0,
       totalSize: 0,
-      modalActionTriggered: false
+      modalActionTriggered: false,
+      allFilesUploaded: false,
+      filesUploaded: []
     };
   },
 
@@ -348,6 +350,8 @@ export default {
         return;
       }
 
+      this.allFilesUploaded = false;
+
       let files = '';
 
       if (e.type === 'change') {
@@ -478,6 +482,9 @@ export default {
     },
 
     upload () {
+      this.queue = this.queue.filter(file => !file.__doneUploading);
+      this.__computeTotalSize();
+
       const length = this.length;
       if (length === 0) {
         return;
@@ -491,7 +498,13 @@ export default {
       let solved = () => {
         filesDone++;
         if (filesDone === length) {
+          let countFilesUploaded = 0;
+          let filesUploadedNow = this.queue.filter(file => file.__doneUploading);
+          filesUploadedNow.forEach(() => {
+            this.filesUploaded.push(filesUploadedNow[countFilesUploaded]);
+          });
           this.uploading = false;
+          this.allFilesUploaded = true;
           this.__computeTotalSize();
           this.$emit('finish');
         }
